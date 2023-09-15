@@ -14,12 +14,14 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -33,6 +35,8 @@ public class SecurityConfig {
     @Autowired
     private UserRepository userRepo;
 
+    @Autowired
+    private final LogoutHandler logoutHandler;
 
     @Bean
     public AuthenticationManager authenticationManager(
@@ -56,7 +60,14 @@ public class SecurityConfig {
                                 .anyRequest().authenticated()
 //                                auth.anyRequest().permitAll()
                 )
-                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .logout(logout->logout.deleteCookies("remove")
+                        .invalidateHttpSession(false)
+                        .logoutUrl("/api/v1/auth/logout")
+                        .addLogoutHandler(logoutHandler)
+                        .logoutSuccessHandler((request, response, authentication) -> SecurityContextHolder.clearContext())
+                );
+
 
         http.exceptionHandling(err->
                 err.authenticationEntryPoint(

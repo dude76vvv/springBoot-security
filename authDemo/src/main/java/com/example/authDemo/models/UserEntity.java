@@ -1,5 +1,6 @@
 package com.example.authDemo.models;
 
+import com.example.authDemo.models.tokens.Token;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,6 +29,10 @@ public class UserEntity implements UserDetails {
     @Column(nullable = false, length = 64)
     private String password;
 
+    //a single user can have many tokens
+    @OneToMany(mappedBy = "user")
+    private List<Token> tokens;
+
     //user can contain a list of Role object
     @ManyToMany
     @JoinTable(
@@ -41,7 +46,7 @@ public class UserEntity implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
 
-        //list  of SimpleGrantedAuthority object
+        //list of SimpleGrantedAuthority object
         //constructed with role name eg ROLE_XXX
 
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();

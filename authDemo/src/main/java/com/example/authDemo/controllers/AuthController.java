@@ -51,17 +51,10 @@ public class AuthController {
 
         if(tokenGenerated == null)  return ResponseEntity.status(400).body("Not successful to get JWT Token");
 
-
         String successMsg = String.format("jwt token: %s",tokenGenerated);
 
         return ResponseEntity.ok(successMsg);
-
-//        return ResponseEntity.ok(tokenGenerated);
-
     }
-
-
-
 
     @GetMapping("/test")
     public String  test() {

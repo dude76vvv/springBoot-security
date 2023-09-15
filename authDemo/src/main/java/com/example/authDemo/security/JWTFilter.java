@@ -29,7 +29,6 @@ public class JWTFilter extends OncePerRequestFilter {
         if (ObjectUtils.isEmpty(header) || !header.startsWith("Bearer")) {
             return false;
         }
-
         return true;
     }
 
@@ -87,22 +86,28 @@ public class JWTFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-//      1st level of check, inspecting the header
+        //1st level of check, inspecting the header
         if (!hasAuthorizationBearer(request)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-//      get actual token
+        //get actual token
         String token = getAccessToken(request);
 
-//      validate the token using jt
+        //validate the token using jwt
         if (!jwtUtil.validateToken(token)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-//      go to controller after update SecurityContextHolder
+        //validate token with db to check if revoked or expired
+        if (!jwtUtil.tokenIsValid(token)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        //successfully go to controller endpoint after updating SecurityContextHolder
         setAuthenticationContext(token, request);
         filterChain.doFilter(request, response);
     }

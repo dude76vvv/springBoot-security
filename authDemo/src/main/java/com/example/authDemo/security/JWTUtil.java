@@ -1,6 +1,8 @@
 package com.example.authDemo.security;
 
 import com.example.authDemo.models.UserEntity;
+import com.example.authDemo.models.tokens.Token;
+import com.example.authDemo.repository.TokenRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -28,6 +30,9 @@ public class JWTUtil {
     private static long EXPIRE_DURATION = SecurityConstants.JWT_EXPIRATION;
     private static String SECRET_KEY = SecurityConstants.JWT_SECRET;
 
+
+    @Autowired
+    private TokenRepository tokenRepo;
 
 
     public static String generateToken(Authentication authentication) {
@@ -83,6 +88,20 @@ public class JWTUtil {
                 .getBody();
     }
 
+
+
+    //check token valid via the database
+    public boolean tokenIsValid(String token){
+
+        boolean result = false;
+
+        Token currToken =tokenRepo.findByToken(token).get();
+
+        if(!currToken.isExpired() && !currToken.isRevoked() ) result = true;
+
+        return  result;
+
+    }
 
 
 

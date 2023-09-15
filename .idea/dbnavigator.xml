@@ -22,7 +22,6 @@
   <component name="DBNavigator.Project.DatabaseFileManager">
     <open-files>
       <object connection-id="9d8de7b3-3372-4842-bebc-754f123fb7d8" object-ref="schemas/authdemo_sb/tables/users" />
-      <object connection-id="9d8de7b3-3372-4842-bebc-754f123fb7d8" object-ref="schemas/authdemo_sb/tables/users_roles" />
     </open-files>
   </component>
   <component name="DBNavigator.Project.DatasetFilterManager">

@@ -5,7 +5,10 @@ import com.example.authDemo.dtos.LoginDTO;
 import com.example.authDemo.dtos.RegisterDTO;
 import com.example.authDemo.models.Role;
 import com.example.authDemo.models.UserEntity;
+import com.example.authDemo.models.tokens.Token;
+import com.example.authDemo.models.tokens.TokenType;
 import com.example.authDemo.repository.RoleRepository;
+import com.example.authDemo.repository.TokenRepository;
 import com.example.authDemo.repository.UserRepository;
 import com.example.authDemo.security.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +30,9 @@ public class AuthService {
 
     @Autowired
     private RoleRepository roleRepo;
+
+    @Autowired
+    private TokenRepository tokenRepo;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -71,25 +77,33 @@ public class AuthService {
     public String login(LoginDTO req){
 
         //use auth manager to check if such user exist in db
-        //if exist, generate the jwt token and return
+        //if exists, generate the jwt token and return
 
         String token=null;
 
         try {
-//          will throw if fail
+            // will throw if fail
             Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken (req.getEmail(), req.getPassword()));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
             token = JWTUtil.generateToken(authentication);
+
+            //get current user
+            UserEntity currUser= userRepo.findByEmail(req.getEmail()).get();
+
+            //revoke  current user all previous tokens. therefore only using one
+            revokeAllUserTokens(currUser);
+
+            //save the latest generated token in database
+            saveUserToken(currUser,token);
+
 
         }catch(Exception e){
 
             System.out.println(e);
         }
 
-
         return token;
-
     }
 
 
@@ -106,7 +120,7 @@ public class AuthService {
 
           newAdmin.addRole(_role);
 
-//        need to save to update database
+          //need to save to update database
           userRepo.save(newAdmin);
 
           if (newAdmin!= null)
@@ -144,6 +158,29 @@ public class AuthService {
 
         return adminResObj2;
 
+    }
+
+    public void revokeAllUserTokens(UserEntity user) {
+        var validUserTokens = tokenRepo.findAllValidTokenByUser(user.getId());
+        if (validUserTokens.isEmpty())
+            return;
+        validUserTokens.forEach(token -> {
+            token.setExpired(true);
+            token.setRevoked(true);
+        });
+        tokenRepo.saveAll(validUserTokens);
+    }
+
+
+    public void saveUserToken(UserEntity user, String jwtToken) {
+        var token = Token.builder()
+                .user(user)
+                .token(jwtToken)
+                .tokenType(TokenType.BEARER)
+                .expired(false)
+                .revoked(false)
+                .build();
+        tokenRepo.save(token);
     }
 
 }
